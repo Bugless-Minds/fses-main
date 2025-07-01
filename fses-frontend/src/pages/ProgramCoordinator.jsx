@@ -133,11 +133,34 @@ const ProgramCoordinator = () => {
       student.examiner3.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (student.chairperson && student.chairperson.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = filterStatus === 'all' || student.status === filterStatus;
+    const nomination = nominations.find(n => n.student === student.id);
+
+    let derivedStatus = 'Pending Examiner Nomination';
+    if (nomination?.examiner1 && nomination?.examiner2 && nomination?.examiner3) {
+      derivedStatus = nomination.chairperson ? 'Chair Assigned' : 'Pending Chair Assignment';
+    }
+
+    const matchesStatus = filterStatus === 'all' || derivedStatus === filterStatus;
     const matchesProgram = filterProgram === 'all' || student.program === filterProgram;
     
     return matchesSearch && matchesStatus && matchesProgram;
   });
+
+  const chairStats = filteredStudents.reduce(
+    (acc, student) => {
+      const nomination = nominations.find(n => n.student === student.id);
+      const examinersReady = nomination?.examiner1 && nomination?.examiner2 && nomination?.examiner3;
+
+      if (examinersReady && nomination?.chairperson) {
+        acc.assigned++;
+      } else if (nomination) {
+        acc.pending++;
+      }
+
+      return acc;
+    },
+    { assigned: 0, pending: 0 }
+  );
 
   const stats = {
     total: filteredStudents.length,
@@ -260,11 +283,11 @@ const ProgramCoordinator = () => {
               </div>
               <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
                 <div className="text-sm text-gray-600">Chair Assigned</div>
-                <div className="text-2xl font-bold text-gray-900">{stats.assigned}</div>
+                <div className="text-2xl font-bold text-gray-900">{chairStats.assigned}</div>
               </div>
               <div className="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
                 <div className="text-sm text-gray-600">Pending</div>
-                <div className="text-2xl font-bold text-gray-900">{stats.pending}</div>
+                <div className="text-2xl font-bold text-gray-900">{chairStats.pending}</div>
               </div>
             </div>
           )}
@@ -438,6 +461,20 @@ const ProgramCoordinator = () => {
 
   const StatisticsView = () => {
     const allStudents = enrichedStudents;
+    const stats = nominations.reduce(
+      (acc, nom) => {
+        const hasAllExaminers = nom.examiner1 && nom.examiner2 && nom.examiner3;
+        if (!hasAllExaminers) {
+          acc.pendingExaminers++;
+        } else if (!nom.chairperson) {
+          acc.pendingChair++;
+        } else {
+          acc.chairAssigned++;
+        }
+        return acc;
+      },
+      { chairAssigned: 0, pendingChair: 0, pendingExaminers: 0 }
+    );
     
     return (
       <div className="space-y-6">
@@ -457,7 +494,7 @@ const ProgramCoordinator = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-green-600">
-                  {allStudents.filter(s => s.status === 'Chair Assigned').length}
+                  {stats.chairAssigned}
                 </div>
                 <div className="text-sm text-gray-500">Chair Assigned</div>
               </div>
@@ -469,7 +506,7 @@ const ProgramCoordinator = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-yellow-600">
-                  {allStudents.filter(s => s.status === 'Pending Chair Assignment').length}
+                  {stats.pendingChair}
                 </div>
                 <div className="text-sm text-gray-500">Pending Chair</div>
               </div>
@@ -481,7 +518,7 @@ const ProgramCoordinator = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-red-600">
-                  {allStudents.filter(s => s.status === 'Pending Examiner Nomination').length}
+                  {stats.pendingExaminers}
                 </div>
                 <div className="text-sm text-gray-500">Pending Examiners</div>
               </div>

@@ -63,6 +63,23 @@ const PGAM = () => {
     };
   });
 
+
+  const newStats = nominations.reduce(
+    (acc, nom) => {
+      const hasAllExaminers = nom.examiner1 && nom.examiner2 && nom.examiner3;
+      if (!hasAllExaminers) {
+        acc.pendingExaminers++;
+      } else if (!nom.chairperson) {
+        acc.pendingChair++;
+      } else {
+        acc.chairAssigned++;
+      }
+      return acc;
+    },
+    { chairAssigned: 0, pendingChair: 0, pendingExaminers: 0 }
+  );
+
+
   // Calculate comprehensive statistics
   const stats = {
     total: allStudents.length,
@@ -71,9 +88,9 @@ const PGAM = () => {
       return acc;
     }, {}),
     byStatus: {
-      'Chair Assigned': allStudents.filter(s => s.status === 'Chair Assigned').length,
-      'Pending Chair Assignment': allStudents.filter(s => s.status === 'Pending Chair Assignment').length,
-      'Pending Examiner Nomination': allStudents.filter(s => s.status === 'Pending Examiner Nomination').length
+      'Chair Assigned': newStats.chairAssigned,
+      'Pending Chair Assignment': newStats.pendingChair,
+      'Pending Examiner Nomination': newStats.pendingExaminers
     },
     byProgram: {
       'PHD': allStudents.filter(s => s.program === 'PHD').length,

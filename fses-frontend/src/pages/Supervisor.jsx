@@ -27,6 +27,7 @@ const Modal = ({
   closeModal,
   handleAddLecturer,
   handleInputChange,
+  departments,
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -67,50 +68,63 @@ const Modal = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">Examiner 2</label>
               <div className="flex space-x-2 items-start">
                 {!showAddExaminer ? (
-                  <select
-                    value={formData.examiner2}
-                    onChange={(e) => setFormData({ ...formData, examiner2: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                  >
-                    <option value="">Select Examiner</option>
-                    {eligibleExaminer2.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="w-full space-y-2">
-                    <input
-                      placeholder="Name"
-                      value={newLecturer.name}
-                      onChange={(e) => setNewLecturer({ ...newLecturer, name: e.target.value })}
-                      className="w-full px-2 py-1 border rounded"
-                    />
-                    <input
-                      placeholder="University"
-                      value={newLecturer.university}
-                      onChange={(e) => setNewLecturer({ ...newLecturer, university: e.target.value })}
-                      className="w-full px-2 py-1 border rounded"
-                    />
                     <select
-                      value={newLecturer.title}
-                      onChange={(e) => setNewLecturer({ ...newLecturer, title: Number.parseInt(e.target.value) })}
-                      className="w-full px-2 py-1 border rounded"
+                      value={formData.examiner2}
+                      onChange={(e) => setFormData({ ...formData, examiner2: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
                     >
-                      <option value={1}>Professor</option>
-                      <option value={2}>Associate Professor</option>
-                      <option value={3}>Doctor</option>
+                      <option value="">Select Examiner</option>
+                      {eligibleExaminer2.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.name}
+                        </option>
+                      ))}
                     </select>
-                    <button
-                      type="button"
-                      onClick={handleAddLecturer}
-                      className="bg-green-600 text-white w-full py-1 rounded"
-                    >
-                      Add
-                    </button>
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full space-y-2">
+                      <input
+                        placeholder="Name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-2 py-1 border rounded"
+                      />
+                      <input
+                        placeholder="University"
+                        value={formData.university}
+                        onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                        className="w-full px-2 py-1 border rounded"
+                      />
+                      <select
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: Number(e.target.value) })}
+                        className="w-full px-2 py-1 border rounded"
+                      >
+                        <option value="">Select Title</option>
+                        <option value={1}>Professor</option>
+                        <option value={2}>Associate Professor</option>
+                        <option value={3}>Doctor</option>
+                      </select>
+                      <select
+                        value={formData.department}
+                        onChange={(e) => setFormData({ ...formData, department: Number(e.target.value) })}
+                        className="w-full px-2 py-1 border rounded"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAddLecturer}
+                        className="bg-green-600 text-white w-full py-1 rounded"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
                 <button
                   type="button"
                   onClick={() => setShowAddExaminer(!showAddExaminer)}
@@ -176,7 +190,7 @@ const Supervisor = () => {
     examiner3: "",
   })
   const [showAddExaminer, setShowAddExaminer] = useState(false)
-  const [newLecturer, setNewLecturer] = useState({ name: "", university: "", title: 3 })
+  const [newLecturer, setNewLecturer] = useState({ name: "", university: "", title: 3, department: 1 })
   const [inputTexts, setInputTexts] = useState({ examiner1: "", examiner3: "" })
 
   const supervisorStudents = students.filter((s) => s.supervisor === user?.id)
@@ -193,7 +207,7 @@ const Supervisor = () => {
 
   const supervisor = lecturers.find((l) => l.staff === user?.id)
 
-  const openModal = (type, student) => {
+  const openModal = (type, student, departments) => {
     setModalType(type)
     setSelectedStudent(student)
     const existingNomination = nominations.find((n) => n.student === student.id)
@@ -247,12 +261,13 @@ const Supervisor = () => {
   }
 
   const handleAddLecturer = async () => {
-    if (!newLecturer.name || !newLecturer.university) return
+    console.log("Adding new lecturer:", formData);
+    if (!formData.name || !formData.university) return
     try {
-      const added = await createLecturer(newLecturer)
-      setFormData({ ...formData, examiner2: added.id.toString() })
+      const added = await createLecturer(formData)
+      setFormData({ ...formData, examiner2: added.id })
       setShowAddExaminer(false)
-      setNewLecturer({ name: "", university: "", title: 3 })
+      setNewLecturer({ name: "", university: "", title: 3, department: 1 })
     } catch (err) {
       console.error("Error adding lecturer:", err)
     }
@@ -375,7 +390,7 @@ const Supervisor = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap space-x-2">
                           <button
-                            onClick={() => openModal("title", student)}
+                            onClick={() => openModal("title", student, departments)}
                             className={nomination.is_locked ? "text-gray-400 cursor-not-allowed flex items-center" :"text-blue-600 hover:text-blue-900 flex items-center"}
                             disabled={nomination.is_locked}
                           >
@@ -425,6 +440,7 @@ const Supervisor = () => {
           closeModal={closeModal}
           handleAddLecturer={handleAddLecturer}
           handleInputChange={handleInputChange}
+          departments={departments}
         />
       )}
     </div>
