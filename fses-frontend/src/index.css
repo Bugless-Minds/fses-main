@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+body {
+    color: #333;
+}
+
 .back-gr{
     /* background: #E4C5EF;
     background-image: linear-gradient(315deg, #E4C5EF, #17AB17);

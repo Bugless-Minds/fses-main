@@ -22,19 +22,75 @@ const ProgramCoordinator = () => {
   const { lecturers } = useLecturers();
   const { nominations, updateNomination } = useNominations();
 
+
+  const handleLockNomination = async (nominationId, locked) => {
+    const nomination = nominations.find(n => n.id === nominationId);
+
+    const nominationPayload = {
+      student: nomination.student,
+      examiner1: nomination.examiner1,
+      examiner2: nomination.examiner2,
+      examiner3: nomination.examiner3,
+      research_title: nomination.research_title,
+      chairperson: nomination.chairperson,
+      is_locked: !locked,
+    };
+    const result = await updateNomination(nominationId, nominationPayload);
+
+    if (result.success) {
+      alert('Nomination locked successfully.');
+    } else {
+      alert('Failed to lock nomination: ' + result.error);
+    }
+  };
+
   // Available chairpersons - Based on real data from Excel
-  const chairpersons = [
-    'PM DR. ROZANA ZAKARIA',
-    'PM DR. WAN NORMEZA BINTI WAN ZAKARIA',
-    'PROF. Ts. DR. KHAIRUR RIJAL BIN JAMALUDIN',
-    'PM Sr DR. SITI UZAIRIAH BINTI MOHD TOBI',
-    'PM DR. RUDZIDATUL AKMAM BT DZIYAUDDIN',
-    'PM Ts. DR. ROSLINA BINTI MOHAMMAD',
-    'PM Ts. DR. MOHD KHAIRI BIN ABU HUSSAIN',
-    'PROF. DR. AHMAD KAMIL MAHMOOD',
-    'PM DR. NURULHUDA FIRDAUS BINTI MOHD. AZMI',
-    'DR. RAHMAN KASSIM'
-  ];
+  const eligibleChairpersons = lecturers.filter((lect) => {
+    if (!editingStudent) return false;
+
+    const supervisor = editingStudent.supervisor;
+    const coSupervisor = editingStudent.co_supervisor;
+    const nomination = nominations.find(n => n.student === editingStudent.id);
+    if (!nomination) return false;
+
+    const examiner1 = nomination.examiner1;
+    const examiner2 = nomination.examiner2;
+    const examiner3 = nomination.examiner3;
+
+    const isLecturerProfessor = lect.title === 1;
+    const isLecturerAssociateOrAbove = lect.title <= 2;
+
+    // Rule: Must be at least Associate Professor
+    if (!isLecturerAssociateOrAbove) return false;
+
+    // Rule: If supervisor or any examiner is Professor, chair must be Professor
+    const supervisorIsProfessor = lecturers.find(l => l.id === supervisor)?.title === 1;
+    const examiner1IsProfessor = lecturers.find(l => l.id === examiner1)?.title === 1;
+    const examiner2IsProfessor = lecturers.find(l => l.id === examiner2)?.title === 1;
+    const examiner3IsProfessor = lecturers.find(l => l.id === examiner3)?.title === 1;
+    const mustBeProfessor = supervisorIsProfessor || examiner1IsProfessor || examiner2IsProfessor || examiner3IsProfessor;
+
+    if (mustBeProfessor && !isLecturerProfessor) return false;
+
+    // Rule: Cannot be supervisor, co-supervisor, or examiner
+    if (
+      lect.id === supervisor ||
+      lect.id === coSupervisor ||
+      lect.id === examiner1 ||
+      lect.id === examiner2 ||
+      lect.id === examiner3
+    ) {
+      return false;
+    }
+
+    // Rule: Max 4 sessions per department (count nominations with same chairperson in same dept)
+    const chairedCount = nominations.filter(n => {
+      const student = students.find(s => s.id === n.student_id);
+      return n.chairperson === lect.id && student?.department === editingStudent.department;
+    }).length;
+
+    return chairedCount < 4;
+  });
 
   // Enrich students data with nomination information
   const enrichedStudents = students.map(student => {
@@ -243,64 +299,134 @@ const ProgramCoordinator = () => {
                   <div className="lg:col-span-3">
                     <div className="text-xs space-y-1">
                       <div className="flex items-center">
-                        <CheckCircle size={12} className={student.examiner1 ? "text-green-500 mr-1" : "text-gray-300 mr-1"} />
+                        {(() => {
+                          const nomination = nominations.find(n => n.student === student.id);
+                          const isAssigned = !!nomination?.examiner1;
+                          return (
+                            <CheckCircle
+                              size={12}
+                              className={`${isAssigned ? "text-green-500" : "text-gray-300"} mr-1`}
+                            />
+                          );
+                        })()}
                         <span className={student.examiner1 ? "text-gray-700" : "text-gray-400"}>
-                          {student.examiner1 || "Pending Examiner 1"}
+                          {(() => {
+                            const nomination = nominations.find(n => n.student === student.id);
+                            const examiner1 = lecturers.find(l => l.id === nomination?.examiner1);
+                            return examiner1?.name || "Pending Examiner 1";
+                          })()}
                         </span>
                       </div>
                       <div className="flex items-center">
-                        <CheckCircle size={12} className={student.examiner2 ? "text-green-500 mr-1" : "text-gray-300 mr-1"} />
+                        {(() => {
+                          const nomination = nominations.find(n => n.student === student.id);
+                          const isAssigned = !!nomination?.examiner2;
+                          return (
+                            <CheckCircle
+                              size={12}
+                              className={`${isAssigned ? "text-green-500" : "text-gray-300"} mr-1`}
+                            />
+                          );
+                        })()}
                         <span className={student.examiner2 ? "text-gray-700" : "text-gray-400"}>
-                          {student.examiner2 || "Pending Examiner 2"}
+                          {(() => {
+                            const nomination = nominations.find(n => n.student === student.id);
+                            const examiner2 = lecturers.find(l => l.id === nomination?.examiner2);
+                            return examiner2?.name || "Pending Examiner 2";
+                          })()}
                         </span>
                       </div>
                       <div className="flex items-center">
-                        <CheckCircle size={12} className={student.examiner3 ? "text-green-500 mr-1" : "text-gray-300 mr-1"} />
+                        {(() => {
+                          const nomination = nominations.find(n => n.student === student.id);
+                          const isAssigned = !!nomination?.examiner3;
+                          return (
+                            <CheckCircle
+                              size={12}
+                              className={`${isAssigned ? "text-green-500" : "text-gray-300"} mr-1`}
+                            />
+                          );
+                        })()}
                         <span className={student.examiner3 ? "text-gray-700" : "text-gray-400"}>
-                          {student.examiner3 || "Pending Examiner 3"}
+                          {(() => {
+                            const nomination = nominations.find(n => n.student === student.id);
+                            const examiner3 = lecturers.find(l => l.id === nomination?.examiner3);
+                            return examiner3?.name || "Pending Examiner 3";
+                          })()}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Chairperson & Status */}
-                  <div className="lg:col-span-2">
-                    <div className="text-xs mb-2">
-                      <span className="font-medium">Chairperson:</span>
-                      <span className={`block ${student.chairperson ? "text-gray-700" : "text-gray-400"}`}>
-                        {student.chairperson || "Not Assigned"}
-                      </span>
-                    </div>
-                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                      student.status === 'Chair Assigned'
-                        ? 'bg-green-100 text-green-800'
-                        : student.status === 'Pending Chair Assignment'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {student.status}
-                    </span>
-                  </div>
+                  {(() => {
+                    const nomination = nominations.find(n => n.student === student.id);
+                    const chairAssigned = nomination?.chairperson != null;
+                    let statusLabel = 'Pending Examiner Nomination';
+                    let nominationExists = !!nomination;
 
-                  {/* Actions */}
-                  <div className="lg:col-span-1 flex justify-end">
-                    {student.status === 'Pending Chair Assignment' && (
-                      <button
-                        onClick={() => openModal('assign', student)}
-                        className="bg-burgundy-700 text-white px-3 py-1 rounded text-xs hover:bg-burgundy-800"
-                      >
-                        Assign Chair
-                      </button>
-                    )}
-                    {student.status === 'Chair Assigned' && (
-                      <button
-                        onClick={() => openModal('assign', student)}
-                        className="text-burgundy-700 hover:bg-burgundy-50 px-3 py-1 rounded text-xs border border-burgundy-700"
-                      >
-                        Edit Chair
-                      </button>
-                    )}
-                  </div>
+                    if (nomination) {
+                      const { examiner1, examiner2, examiner3, chairperson } = nomination;
+
+                      const allExaminersAssigned = examiner1 && examiner2 && examiner3;
+
+                      if (!allExaminersAssigned) {
+                        statusLabel = 'Pending Examiner Nomination';
+                        nominationExists = false;
+                      } else if (!chairperson) {
+                        statusLabel = 'Pending Chair Assignment';
+                      } else {
+                        statusLabel = 'Chair Assigned';
+                      }
+                    }
+                    const statusColor = !nominationExists
+                      ? 'bg-red-100 text-red-800'
+                      : chairAssigned
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800';
+
+                    return (
+                      <>
+                        {/* Chairperson & Status */}
+                        <div className="lg:col-span-2">
+                          <div className="text-xs mb-2">
+                            <span className="font-medium">Chairperson:</span>
+                            <span className={`block ${chairAssigned ? "text-gray-700" : "text-gray-400"}`}>
+                              {chairAssigned
+                                ? lecturers.find(l => l.id === nomination?.chairperson)?.name || 'Unknown'
+                                : 'Not Assigned'}
+                            </span>
+                          </div>
+                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${statusColor}`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="lg:col-span-1 flex flex-col justify-end">
+                          {nominationExists && (
+                            <button
+                              onClick={() => openModal('assign', student)}
+                              className={`px-3 py-1 rounded mb-2 text-xs ${
+                                chairAssigned
+                                  ? 'text-burgundy-700 border border-burgundy-700 hover:bg-burgundy-50'
+                                  : 'bg-burgundy-700 text-white hover:bg-burgundy-800'
+                              }`}
+                            >
+                              {chairAssigned ? 'Edit Chair' : 'Assign Chair'}
+                            </button>
+                          )}
+                          {nominationExists && chairAssigned && (
+                            <button
+                              onClick={() => handleLockNomination(nomination.id, nomination.is_locked)}
+                              className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              {nomination.is_locked ? 'Unlock Nomination' : 'Lock Nomination'}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
@@ -440,9 +566,12 @@ const ProgramCoordinator = () => {
   };
 
   const handleAssignChairperson = async () => {
-    if (!editingStudent || !editingStudent.chairperson) return;
+    if (!editingStudent) return;
 
-    const nomination = nominations.find(nom => nom.student && nom.student.id === editingStudent.id);
+    console.log('Student:', editingStudent);
+    console.log(nominations);
+    const nomination = nominations.find(nom => nom.student === editingStudent.id);
+    console.log(nomination);
     if (nomination) {
       const result = await updateNomination(nomination.id, {
         ...nomination,
@@ -539,9 +668,9 @@ const ProgramCoordinator = () => {
                 onChange={(e) => setEditingStudent({...editingStudent, chairperson: e.target.value})}
               >
                 <option value="">Select a chairperson</option>
-                {chairpersons.map((chair) => (
-                  <option key={chair} value={chair}>
-                    {chair}
+                {eligibleChairpersons.map(chair => (
+                  <option key={chair.id} value={chair.id}>
+                    {chair.name}
                   </option>
                 ))}
               </select>
