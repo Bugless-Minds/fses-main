@@ -249,6 +249,64 @@ const PGAM = () => {
     }
   };
 
+  const handleDownloadReport = () => {
+    // Create CSV content
+    const csvContent = generateCSVReport();
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `First_Stage_Evaluation_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generateCSVReport = () => {
+    const headers = [
+      'Student Name',
+      'Department',
+      'Program',
+      'Semester',
+      'Evaluation Type',
+      'Main Supervisor',
+      'Co-Supervisor',
+      'Research Title',
+      'Examiner 1',
+      'Examiner 2', 
+      'Examiner 3',
+      'Chairperson',
+      'Status'
+    ];
+
+    const csvRows = [headers.join(',')];
+
+    allStudents.forEach(student => {
+      const nomination = nominations.find(nom => nom.student === student.id) || {};
+      const row = [
+        `"${student.name}"`,
+        `"${student.department}"`,
+        `"${student.program}"`,
+        `"${student.semester}"`,
+        `"${student.evaluationType}"`,
+        `"${student.mainSupervisor}"`,
+        `"${student.coSupervisor || ''}"`,
+        `"${student.researchTitle}"`,
+        `"${lecturers.find((l) => l.id == nomination.examiner1)?.name || 'N/A'}"`,
+        `"${lecturers.find((l) => l.id == nomination.examiner2)?.name || 'N/A'}"`,
+        `"${lecturers.find((l) => l.id == nomination.examiner3)?.name || 'N/A'}"`,
+        `"${student.chairperson || ''}"`,
+        `"${student.status}"`
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    return csvRows.join('\n');
+  };
+
   const OverviewPage = () => (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -364,7 +422,9 @@ const PGAM = () => {
           </div>
 
           <div className="flex items-end">
-            <button className="bg-burgundy-700 text-white px-4 py-2 rounded-md hover:bg-burgundy-800 flex items-center space-x-2">
+            <button 
+            onClick={handleDownloadReport}
+            className="bg-burgundy-700 text-white px-4 py-2 rounded-md hover:bg-burgundy-800 flex items-center space-x-2">
               <Download size={16} />
               <span>Export Report</span>
             </button>
