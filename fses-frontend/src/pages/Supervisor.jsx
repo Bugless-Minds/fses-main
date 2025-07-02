@@ -27,47 +27,64 @@ const Modal = ({
   closeModal,
   handleAddLecturer,
   handleInputChange,
-  departments,
-}) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {modalType === "title" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Research Title</label>
-            <textarea
-              value={formData.researchTitle}
-              onChange={(e) => setFormData({ ...formData, researchTitle: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Enter research title"
-              rows={4}
-              required
-            />
-          </div>
-        )}
-        {modalType === "examiners" && (
-          <>
+  departments = [],
+  lecturers = [],
+  nominations = [],
+  editingStudent,
+}) => {
+  // Filter lecturers who are not already assigned as the chairperson for this student
+  const assignedChairperson = nominations.find((nom) => nom.student === editingStudent.id)?.chairperson;
+  const availableLecturers = lecturers.filter((lect) => lect.id !== assignedChairperson);
+
+  // Filter eligible examiners dynamically based on the selection of other examiners
+  const filterEligibleExaminers = (excludeExaminerId) => {
+    return availableLecturers.filter((lect) => lect.id !== excludeExaminerId);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {modalType === "title" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Internal Examiner 1</label>
-              <input
-                list="examiner1-options"
-                value={inputTexts.examiner1}
-                onChange={(e) => handleInputChange("examiner1", e.target.value)}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Research Title</label>
+              <textarea
+                value={formData.researchTitle}
+                onChange={(e) => setFormData({ ...formData, researchTitle: e.target.value })}
                 className="w-full px-3 py-2 border rounded-md"
-                placeholder="Search by name"
+                placeholder="Enter research title"
+                rows={4}
                 required
               />
-              <datalist id="examiner1-options">
-                {eligibleExaminer1.map((e) => (
-                  <option key={e.id} value={e.name} />
-                ))}
-              </datalist>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Examiner 2</label>
-              <div className="flex space-x-2 items-start">
-                {!showAddExaminer ? (
+          {modalType === "examiners" && (
+            <>
+              {/* Internal Examiner 1 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Internal Examiner 1</label>
+                <input
+                  list="examiner1-options"
+                  value={inputTexts.examiner1}
+                  onChange={(e) => handleInputChange("examiner1", e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Search by name"
+                  onFocus={(e) => e.target.value = ""}
+                  required
+                />
+                <datalist id="examiner1-options">
+                  {eligibleExaminer1.map((e) => (
+                    <option key={e.id} value={e.name} />
+                  ))}
+                </datalist>
+              </div>
+
+              {/* Internal Examiner 2 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Examiner 2</label>
+                <div className="flex space-x-2 items-start">
+                  {!showAddExaminer ? (
                     <select
                       value={formData.examiner2}
                       onChange={(e) => setFormData({ ...formData, examiner2: e.target.value })}
@@ -125,51 +142,55 @@ const Modal = ({
                       </button>
                     </div>
                   )}
-                <button
-                  type="button"
-                  onClick={() => setShowAddExaminer(!showAddExaminer)}
-                  className="p-2 rounded bg-burgundy-600 text-black hover:bg-burgundy-700"
-                >
-                  {showAddExaminer ? <X size={16} /> : <Plus size={16} />}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddExaminer(!showAddExaminer)}
+                    className="p-2 rounded bg-burgundy-600 text-black hover:bg-burgundy-700"
+                  >
+                    {showAddExaminer ? <X size={16} /> : <Plus size={16} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Internal Examiner 3</label>
-              <input
-                list="examiner3-options"
-                value={inputTexts.examiner3}
-                onChange={(e) => handleInputChange("examiner3", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder="Search by name"
-                required
-              />
-              <datalist id="examiner3-options">
-                {eligibleExaminer3.map((e) => (
-                  <option key={e.id} value={e.name} />
-                ))}
-              </datalist>
-            </div>
-          </>
-        )}
+              {/* Internal Examiner 3 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Internal Examiner 3</label>
+                <input
+                  list="examiner3-options"
+                  value={inputTexts.examiner3}
+                  onChange={(e) => handleInputChange("examiner3", e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Search by name"
+                  onFocus={(e) => e.target.value = ""}
+                  required
+                />
+                <datalist id="examiner3-options">
+                  {eligibleExaminer3.map((e) => (
+                    <option key={e.id} value={e.name} />
+                  ))}
+                </datalist>
+              </div>
+            </>
+          )}
 
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button type="submit" className="px-4 py-2 bg-burgundy-700 text-white rounded-md hover:bg-burgundy-800">
-            Save
-          </button>
-        </div>
-      </form>
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" className="px-4 py-2 bg-burgundy-700 text-white rounded-md hover:bg-burgundy-800">
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
-)
+  );
+};
+
 
 const Supervisor = () => {
   const { user } = useAuth()
