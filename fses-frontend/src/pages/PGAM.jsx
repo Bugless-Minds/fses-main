@@ -296,7 +296,7 @@ const PGAM = () => {
       </div>
 
       {/* Students Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -307,6 +307,7 @@ const PGAM = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Examiners</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chairperson</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program Coordinator</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -325,53 +326,80 @@ const PGAM = () => {
                     {student.department}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{student.mainSupervisor}</div>
                   {student.coSupervisor && (
                     <div className="text-xs text-gray-500">Co: {student.coSupervisor}</div>
                   )}
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 line-clamp-2">{student.researchTitle}</div>
+                <td className="px-1 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 line-clamp-2">{nominations.find((n) => n.student === student.id)?.research_title || 'N/A'}</div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-1 py-4 whitespace-nowrap">
                   <div className="text-xs space-y-1">
-                    <div>{student.examiner1 || <span className="text-gray-400">Pending</span>}</div>
-                    <div>{student.examiner2 || <span className="text-gray-400">Pending</span>}</div>
-                    <div>{student.examiner3 || <span className="text-gray-400">Pending</span>}</div>
+                    <div>1. {lecturers.find((l) => l.id === nominations.find((n) => n.student === student.id)?.examiner1)?.name || <span className="text-gray-400">Pending</span>}</div>
+                    <div>2. {lecturers.find((l) => l.id === nominations.find((n) => n.student === student.id)?.examiner2)?.name || <span className="text-gray-400">Pending</span>}</div>
+                    <div>3. {lecturers.find((l) => l.id === nominations.find((n) => n.student === student.id)?.examiner3)?.name || <span className="text-gray-400">Pending</span>}</div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {student.chairperson || <span className="text-gray-400">Not Assigned</span>}
+                    {lecturers.find((l) => l.id === nominations.find((n) => n.student === student.id)?.chairperson)?.name || <span className="text-gray-400">Not Assigned</span>}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    student.status === 'Chair Assigned'
+                  {(() => {
+                    const nomination = nominations.find(n => n.student === student.id);
+                    const chairAssigned = nomination?.chairperson != null;
+                    let statusLabel = 'Pending Examiner Nomination';
+                    let nominationExists = !!nomination;
+
+                    if (nomination) {
+                      const { examiner1, examiner2, examiner3, chairperson } = nomination;
+
+                      const allExaminersAssigned = examiner1 && examiner2 && examiner3;
+
+                      if (!allExaminersAssigned) {
+                        statusLabel = 'Pending Examiner Nomination';
+                        nominationExists = false;
+                      } else if (!chairperson) {
+                        statusLabel = 'Pending Chair Assignment';
+                      } else {
+                        statusLabel = 'Chair Assigned';
+                      }
+                    }
+                    const statusColor = !nominationExists
+                      ? 'bg-red-100 text-red-800'
+                      : chairAssigned
                       ? 'bg-green-100 text-green-800'
-                      : student.status === 'Pending Chair Assignment'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {student.status}
-                  </span>
+                      : 'bg-yellow-100 text-yellow-800';
+
+                    return (
+                      <>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}`}>
+                          {statusLabel}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {student.coordinator}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col space-y-3">
                   <button
                     onClick={() => openEditModal(student, 'examiners')}
-                    className="text-indigo-600 hover:text-indigo-900 mr-2"
+                    className="text-green-600 hover:text-green-800 mr-2 flex items-center space-x-2 cursor-pointer"
                   >
                     <Edit size={16} />
+                    <span>Edit Examiners</span>
                   </button>
                   <button
                     onClick={() => openEditModal(student, 'chairperson')}
-                    className="text-indigo-600 hover:text-indigo-900"
+                    className="text-indigo-500 hover:text-indigo-900 flex items-center space-x-2 cursor-pointer"
                   >
                     <Edit size={16} />
+                    <span>Edit Chairperson</span>
                   </button>
                 </td>
               </tr>
@@ -505,7 +533,7 @@ const PGAM = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {studentsLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="text-gray-500">Loading data...</div>
