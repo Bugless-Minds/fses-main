@@ -24,7 +24,34 @@ const PGAM = () => {
   const { departments } = useDepartments();
 
   // Available examiners and chairpersons
-  const availableExaminers = lecturers.filter(l => l.university === 'UTM').map(l => l.name.toUpperCase());
+  const availableExaminers = lecturers.filter(l => {
+    if (!editingStudent) return false;
+    const nomination = nominations.find(n => n.student === editingStudent.id);
+    const supervisor = editingStudent.supervisor;
+    const coSupervisor = editingStudent.co_supervisor;
+
+    if (!nomination) {
+      if (l.id === supervisor || l.id === coSupervisor) {
+        return false;
+      } else {
+        return true;
+      }
+    };
+    if (l.university !== 'UTM') return false;
+
+    const examiner1 = nomination.examiner1;
+    const examiner2 = nomination.examiner2;
+    const examiner3 = nomination.examiner3;
+
+    if (
+      l.id === examiner1 ||
+      l.id === examiner2 ||
+      l.id === examiner3
+    ) {
+      return false;
+    }
+    return l;
+  }).map(l => l.name.toUpperCase());
   const availableChairpersons = lecturers.filter(l => l.university === 'UTM' && l.title === 1).map(l => l.name.toUpperCase());
   const eligibleChairpersons = lecturers.filter((lect) => {
     if (!editingStudent) return false;
@@ -76,7 +103,7 @@ const PGAM = () => {
 
   // Process students data with nominations
   const allStudents = students.map(student => {
-    const nomination = nominations.find(nom => nom.student && nom.student.id === student.id);
+    const nomination = nominations.find(nom => nom.student === student.id);
     
     const supervisorName = typeof student.supervisor === 'object' 
       ? student.supervisor.name 
@@ -104,7 +131,7 @@ const PGAM = () => {
       examiner1: nomination?.examiner1?.name?.toUpperCase() || '',
       examiner2: nomination?.examiner2?.name?.toUpperCase() || '',
       examiner3: nomination?.examiner3?.name?.toUpperCase() || '',
-      chairperson: nomination?.chairperson?.toUpperCase() || '',
+      chairperson: lecturers.find((l) => l.id == nomination?.chairperson)?.name.toUpperCase() || '',
       status: nomination ? (nomination.chairperson ? 'Chair Assigned' : 'Pending Chair Assignment') : 'Pending Examiner Nomination',
       coordinator: 'PROGRAM COORDINATOR' // This could be enhanced to show actual coordinator
     };
@@ -148,8 +175,11 @@ const PGAM = () => {
 
   // Examiner workload analysis
   const examinerWorkload = {};
-  allStudents.forEach(student => {
-    [student.examiner1, student.examiner2, student.examiner3].forEach(examiner => {
+  nominations.forEach(nomination => {
+    const examiner1_name = lecturers.find(l => l.id === nomination.examiner1)?.name;
+    const examiner2_name = lecturers.find(l => l.id === nomination.examiner2)?.name;
+    const examiner3_name = lecturers.find(l => l.id === nomination.examiner3)?.name;
+    [examiner1_name, examiner2_name, examiner3_name].forEach(examiner => {
       if (examiner && examiner.trim()) {
         examinerWorkload[examiner] = (examinerWorkload[examiner] || 0) + 1;
       }
@@ -194,7 +224,7 @@ const PGAM = () => {
   };
 
   const handleSaveChanges = async () => {
-    const nomination = nominations.find(nom => nom.student && nom.student.id === editingStudent.id);
+    const nomination = nominations.find(nom => nom.student  === editingStudent.id);
     
     if (nomination) {
       const examiner1 = lecturers.find(l => l.name.toUpperCase() === editingStudent.examiner1);
@@ -206,7 +236,7 @@ const PGAM = () => {
         examiner1: examiner1?.id || nomination.examiner1,
         examiner2: examiner2?.id || nomination.examiner2,
         examiner3: examiner3?.id || nomination.examiner3,
-        chairperson: editingStudent.chairperson
+        chairperson: lecturers.find((l) => l.name === editingStudent.chairperson)?.id || nomination.chairperson
       };
       
       const result = await updateNomination(nomination.id, updateData);
@@ -287,7 +317,7 @@ const PGAM = () => {
               <div className="flex items-center">
                 <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
                   <div 
-                    className="bg-burgundy-600 h-2 rounded-full" 
+                    className="bg-burgundy-700 h-2 rounded-full" 
                     style={{ width: `${(count / stats.total) * 100}%` }}
                   ></div>
                 </div>
@@ -436,14 +466,20 @@ const PGAM = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col space-y-3">
                   <button
                     onClick={() => openEditModal(student, 'examiners')}
-                    className="text-green-600 hover:text-green-800 mr-2 flex items-center space-x-2 cursor-pointer"
+                    className={`mr-2 flex items-center space-x-2  ${
+                      nominations.find(n => n.student === student.id) ? 'text-green-600 hover:text-green-800 cursor-pointer' : 'text-gray-400 hover:text-gray-600 cursor-not-allowed'
+                    }`}
+                    disabled={nominations.find(n => n.student === student.id) == null}
                   >
                     <Edit size={16} />
                     <span>Edit Examiners</span>
                   </button>
                   <button
                     onClick={() => openEditModal(student, 'chairperson')}
-                    className="text-indigo-500 hover:text-indigo-900 flex items-center space-x-2 cursor-pointer"
+                    className={`flex items-center space-x-2 ${
+                      nominations.find(n => n.student === student.id) ? 'text-indigo-500 hover:text-indigo-900 cursor-pointer' : 'text-gray-400 hover:text-gray-600 cursor-not-allowed'
+                    }`}
+                    disabled={nominations.find(n => n.student === student.id) == null}
                   >
                     <Edit size={16} />
                     <span>Edit Chairperson</span>
@@ -501,11 +537,11 @@ const PGAM = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{Object.keys(examinerWorkload).length}</div>
-            <div className="text-sm text-gray-500">Total Examiners</div>
+            <div className="text-sm text-gray-500">Total Examiners Assigned</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{Object.keys(chairpersonWorkload).length}</div>
-            <div className="text-sm text-gray-500">Total Chairpersons</div>
+            <div className="text-sm text-gray-500">Total Chairpersons Assigned</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
