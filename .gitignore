@@ -50,3 +50,5 @@ yarn-error.log
 *.swp
 *.swo
 .DS_Store
+fses-backend/fses/migrations/0001_initial.py
+fses-backend/fses/migrations/0001_initial.py

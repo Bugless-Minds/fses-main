@@ -25,7 +25,9 @@ SECRET_KEY = "django-insecure-jo@(gvqtm1bkh+1ro3rp#=ag@$@m%m)hs@&-g9c2ixj6t9eqq4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+]
 
 
 # Application definition
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -51,31 +54,33 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 # Allow frontend domain
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite default port
-    "http://localhost:3000",  # React default port
-]
+#CORS_ALLOWED_ORIGINS = [
+#    "http://localhost:3000",  # or your React domain
+#    "http://localhost:5173",
+#    "http://127.0.0.1:5173", 
+#
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development; restrict in production
 
 # Make sure CSRF works with session auth
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
     "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 # Use session authentication
 REST_FRAMEWORK = {
-      'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ],
+    ),
 }
 
 ROOT_URLCONF = "fses_back.urls"
@@ -160,3 +165,14 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'           # For Gmail
+EMAIL_PORT = 587                        # TLS port
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'buglessminds@gmail.com'
+EMAIL_HOST_PASSWORD = 'dink taow ydgp asnt'  # Use App Password, NOT your Gmail password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+PASSWORD_RESET_TIMEOUT = 3600

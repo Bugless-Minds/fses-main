@@ -26,6 +26,53 @@ const PGAM = () => {
   // Available examiners and chairpersons
   const availableExaminers = lecturers.filter(l => l.university === 'UTM').map(l => l.name.toUpperCase());
   const availableChairpersons = lecturers.filter(l => l.university === 'UTM' && l.title === 1).map(l => l.name.toUpperCase());
+  const eligibleChairpersons = lecturers.filter((lect) => {
+    if (!editingStudent) return false;
+
+    const supervisor = editingStudent.supervisor;
+    const coSupervisor = editingStudent.co_supervisor;
+    const nomination = nominations.find(n => n.student === editingStudent.id);
+    if (lect.university !== 'UTM') return false;
+    if (!nomination) return false;
+
+    const examiner1 = nomination.examiner1;
+    const examiner2 = nomination.examiner2;
+    const examiner3 = nomination.examiner3;
+
+    const isLecturerProfessor = lect.title === 1;
+    const isLecturerAssociateOrAbove = lect.title <= 2;
+
+    // Rule: Must be at least Associate Professor
+    if (!isLecturerAssociateOrAbove) return false;
+
+    // Rule: If supervisor or any examiner is Professor, chair must be Professor
+    const supervisorIsProfessor = lecturers.find(l => l.id === supervisor)?.title === 1;
+    const examiner1IsProfessor = lecturers.find(l => l.id === examiner1)?.title === 1;
+    const examiner2IsProfessor = lecturers.find(l => l.id === examiner2)?.title === 1;
+    const examiner3IsProfessor = lecturers.find(l => l.id === examiner3)?.title === 1;
+    const mustBeProfessor = supervisorIsProfessor || examiner1IsProfessor || examiner2IsProfessor || examiner3IsProfessor;
+
+    if (mustBeProfessor && !isLecturerProfessor) return false;
+
+    // Rule: Cannot be supervisor, co-supervisor, or examiner
+    if (
+      lect.id === supervisor ||
+      lect.id === coSupervisor ||
+      lect.id === examiner1 ||
+      lect.id === examiner2 ||
+      lect.id === examiner3
+    ) {
+      return false;
+    }
+
+    // Rule: Max 4 sessions per department (count nominations with same chairperson in same dept)
+    const chairedCount = nominations.filter(n => {
+      const student = students.find(s => s.id === n.student_id);
+      return n.chairperson === lect.id && student?.department === editingStudent.department;
+    }).length;
+
+    return chairedCount < 4;
+  });
 
   // Process students data with nominations
   const allStudents = students.map(student => {
@@ -53,7 +100,7 @@ const PGAM = () => {
       semester: student.semester || 1,
       mainSupervisor: supervisorName.toUpperCase(),
       coSupervisor: coSupervisorName.toUpperCase(),
-      researchTitle: student.research_title?.toUpperCase() || '',
+      researchTitle: nomination?.research_title?.toUpperCase() || '',
       examiner1: nomination?.examiner1?.name?.toUpperCase() || '',
       examiner2: nomination?.examiner2?.name?.toUpperCase() || '',
       examiner3: nomination?.examiner3?.name?.toUpperCase() || '',
@@ -617,13 +664,13 @@ const PGAM = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Chairperson</label>
                 <select
                   name="chairperson"
-                  value={editingStudent.chairperson}
+                  value={lecturers.find((l) => l.id === nominations.find((n) => n.student === editingStudent.id)?.chairperson)?.name || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-burgundy-500"
                 >
                   <option value="">Select Chairperson</option>
-                  {availableChairpersons.map(chair => (
-                    <option key={chair} value={chair}>{chair}</option>
+                  {eligibleChairpersons.map(chair => (
+                    <option key={chair.id} value={chair.name}>{chair.name}</option>
                   ))}
                 </select>
               </div>

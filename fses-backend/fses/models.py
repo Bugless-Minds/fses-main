@@ -3,25 +3,25 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
-    # Define role choices with exact values expected by frontend
-    ROLE_CHOICES = (
-        ('OFFICE_ASSISTANT', 'Office Assistant'),
-        ('SUPERVISOR', 'Supervisor'),
-        ('PROGRAM_COORDINATOR', 'Program Coordinator'),
-        ('PGAM', 'PGAM'),
-    )
-    
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='SUPERVISOR')
+    OFFICE_ASSISTANT = "OFFICE_ASSISTANT"
+    SUPERVISOR = "SUPERVISOR"
+    PROGRAM_COORDINATOR = "PROGRAM_COORDINATOR"
+    PGAM = "PGAM"
+    PROGRAM_CHOICES = [
+        (OFFICE_ASSISTANT, "Office Assistant"),
+        (SUPERVISOR, "Supervisor"),
+        (PROGRAM_COORDINATOR, "Program Coordinator"),
+        (PGAM, "PGAM"),
+    ]
+    role = models.CharField(max_length=20, choices=PROGRAM_CHOICES, default=OFFICE_ASSISTANT)
     is_first_time = models.BooleanField(default=True)
-    
-    # Add any other fields you need
 
     def __str__(self):
         return self.username
 
 
 class Department(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=50)
     code = models.CharField(max_length=20)
 
     def __str__(self):
@@ -29,65 +29,102 @@ class Department(models.Model):
 
 
 class Lecturer(models.Model):
-    TITLE_CHOICES = (
-        (1, 'Professor'),
-        (2, 'Associate Professor'),
-        (3, 'Doctor'),
-    )
-    
-    name = models.CharField(max_length=100)
+    PROFESSOR = 1
+    ASSOCIATE_PROFESSOR = 2
+    DOCTOR = 3
+    TITLE_CHOICES = [
+        (PROFESSOR, "Professor"),
+        (ASSOCIATE_PROFESSOR, "Associate Professor"),
+        (DOCTOR, "Doctor"),
+    ]
+
+    name = models.CharField(max_length=50)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    title = models.IntegerField(choices=TITLE_CHOICES)
-    university = models.CharField(max_length=100)
-    staff = models.OneToOneField(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
-    
+    title = models.IntegerField(choices=TITLE_CHOICES, default=DOCTOR)
+    university = models.CharField(max_length=30)
+    staff = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+
     def __str__(self):
         return self.name
 
 
 class Student(models.Model):
-    PROGRAM_CHOICES = (
-        ('PHD', 'PhD'),
-        ('MPHIL', 'MPhil'),
-        ('DSE', 'DSE'),
+    PHD = "PHD"
+    MPHIL = "MPHIL"
+    DSE = "DSE"
+    PROGRAM_CHOICES = [
+        (PHD, "PhD"),
+        (MPHIL, "MPhil"),
+        (DSE, "DSE"),
+    ]
+
+    FIRST_EVALUATION = "FIRST_EVALUATION"
+    RE_EVALUATION = "RE_EVALUATION"
+    EVALUATION_CHOICES = [
+        (FIRST_EVALUATION, "First Evaluation"),
+        (RE_EVALUATION, "Re-Evaluation"),
+    ]
+
+    name = models.CharField(max_length=50)
+    supervisor = models.ForeignKey(
+        Lecturer,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="supervisor_id",
     )
-    
-    EVALUATION_TYPE_CHOICES = (
-        ('FIRST_EVALUATION', 'First Evaluation'),
-        ('RE_EVALUATION', 'Re-Evaluation'),
+    co_supervisor = models.ForeignKey(
+        Lecturer,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="co_supervisor_id",
     )
-    
-    student_id = models.CharField(max_length=20, unique=True)  
-    name = models.CharField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    supervisor = models.ForeignKey(Lecturer, on_delete=models.CASCADE, related_name='supervised_students')
-    co_supervisor = models.ForeignKey(Lecturer, on_delete=models.CASCADE, related_name='co_supervised_students', null=True, blank=True)
-    program = models.CharField(max_length=10, choices=PROGRAM_CHOICES)
-    evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPE_CHOICES)
-    research_title = models.CharField(max_length=255, blank=True)
+    program = models.CharField(max_length=10, choices=PROGRAM_CHOICES, default=PHD)
     semester = models.PositiveSmallIntegerField(default=1)
+    evaluation_type = models.CharField(
+        choices=EVALUATION_CHOICES, default=FIRST_EVALUATION
+    )
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.student_id} - {self.name}"
+        return self.name
 
 
 class Nomination(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='nominations')
-    examiner1 = models.ForeignKey(Lecturer, on_delete=models.CASCADE, related_name='examiner1_nominations', null=True, blank=True)
-    examiner2 = models.ForeignKey(Lecturer, on_delete=models.CASCADE, related_name='examiner2_nominations', null=True, blank=True)
-    examiner3 = models.ForeignKey(Lecturer, on_delete=models.CASCADE, related_name='examiner3_nominations', null=True, blank=True)
-    # For external examiners not in the system
-    examiner1_name = models.CharField(max_length=100, null=True, blank=True)
-    examiner1_email = models.EmailField(null=True, blank=True)
-    examiner1_university = models.CharField(max_length=100, null=True, blank=True)
-    examiner2_name = models.CharField(max_length=100, null=True, blank=True)
-    examiner2_email = models.EmailField(null=True, blank=True)
-    examiner2_university = models.CharField(max_length=100, null=True, blank=True)
-    chairperson = models.CharField(max_length=100, null=True, blank=True)  
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    examiner1 = models.ForeignKey(
+        Lecturer,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="examiner_1_id",
+    )
+    examiner2 = models.ForeignKey(
+        Lecturer,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="examiner_2_id",
+    )
+    examiner3 = models.ForeignKey(
+        Lecturer,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="examiner_3_id",
+    )
+    research_title = models.CharField(max_length=150, blank=True, null=True)
+    is_locked = models.BooleanField(default=False)
+    chairperson = models.ForeignKey(
+        Lecturer,
+        on_delete=models.SET_NULL,
+        related_name="chairperson_id",
+        null=True,
+        blank=True,
+    )
+
     def __str__(self):
-        return f"Nomination for {self.student.name}"
-
-
+        return f"{self.student.name} - {self.research_title}"
