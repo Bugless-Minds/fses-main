@@ -206,6 +206,212 @@ const Modal = ({
   </div>
 )
 
+// Move StudentManagement component OUTSIDE to prevent re-renders
+const StudentManagement = ({
+  searchTerm,
+  setSearchTerm,
+  filteredStudents,
+  studentsLoading,
+  studentsError,
+  departments,
+  lecturers,
+  openModal,
+  handleDelete,
+}) => (
+  <div className="space-y-8">
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-bold text-burgundy-700">Student Management</h2>
+      <button
+        onClick={() => openModal("student")}
+        className="bg-burgundy-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-burgundy-800"
+      >
+        <Plus size={20} />
+        <span>Add Student</span>
+      </button>
+    </div>
+
+    {studentsError && (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: {studentsError}</div>
+    )}
+
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-4 border-b">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search students..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:border-burgundy-500"
+          />
+        </div>
+      </div>
+
+      {studentsLoading ? (
+        <div className="p-8 text-center">Loading students...</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Department
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Supervisor
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Program
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Evaluation Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredStudents.map((student) => (
+                <tr key={student.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {departments.find((dep) => dep.id === student.department)?.name || student.department}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {lecturers.find((lect) => lect.id === student.supervisor)?.name || student.supervisor}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.program}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {student.evaluation_type === "FIRST_EVALUATION" ? "First Evaluation" : "Re-Evaluation"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => openModal("student", student)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(student.id, "student")}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+)
+
+// Move LecturerManagement component OUTSIDE to prevent re-renders
+const LecturerManagement = ({
+  searchTerm,
+  setSearchTerm,
+  filteredLecturers,
+  lecturersLoading,
+  lecturersError,
+  departments,
+  lecturerTitles,
+  openModal,
+  handleDelete,
+}) => (
+  <div className="space-y-8">
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-bold text-burgundy-700">Lecturer Management</h2>
+      <button
+        onClick={() => openModal("lecturer")}
+        className="bg-burgundy-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-burgundy-800"
+      >
+        <Plus size={20} />
+        <span>Add Lecturer</span>
+      </button>
+    </div>
+
+    {lecturersError && (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: {lecturersError}</div>
+    )}
+
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-4 border-b">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search lecturers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:border-burgundy-500"
+          />
+        </div>
+      </div>
+
+      {lecturersLoading ? (
+        <div className="p-8 text-center">Loading lecturers...</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Department
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  University
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredLecturers.map((lecturer) => (
+                <tr key={lecturer.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{lecturer.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {lecturerTitles.find((t) => t.value === lecturer.title)?.label || lecturer.title}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {typeof lecturer.department === "object"
+                      ? lecturer.department?.name || "N/A"
+                      : departments.find((d) => d.id === lecturer.department)?.name || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{lecturer.university || "UTM"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => openModal("lecturer", lecturer)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(lecturer.id, "lecturer")}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+)
+
 const OfficeAssistantSystem = () => {
   const [currentTab, setCurrentTab] = useState("students")
   const [showModal, setShowModal] = useState(false)
@@ -221,6 +427,7 @@ const OfficeAssistantSystem = () => {
     updateStudent,
     deleteStudent,
   } = useStudents()
+
   const {
     lecturers,
     loading: lecturersLoading,
@@ -229,6 +436,7 @@ const OfficeAssistantSystem = () => {
     updateLecturer,
     deleteLecturer,
   } = useLecturers()
+
   const { departments, loading: departmentsLoading } = useDepartments()
   const { user } = useAuth()
 
@@ -307,8 +515,8 @@ const OfficeAssistantSystem = () => {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault()
-
       let result
+
       if (modalType === "student") {
         if (selectedStudent) {
           result = await updateStudent(selectedStudent.id, formData)
@@ -322,13 +530,13 @@ const OfficeAssistantSystem = () => {
           department: formData.department,
           university: formData.university || "UTM",
         }
-
         if (selectedStudent) {
           result = await updateLecturer(selectedStudent.id, lecturerData)
         } else {
           result = await createLecturer(lecturerData)
         }
       }
+
       if (result && result.success) {
         closeModal()
       } else {
@@ -382,242 +590,86 @@ const OfficeAssistantSystem = () => {
     })
   }, [lecturers, departments, searchTerm])
 
-  const StudentManagement = () => (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-burgundy-700">Student Management</h2>
-        <button
-          onClick={() => openModal("student")}
-          className="bg-burgundy-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-burgundy-800"
-        >
-          <Plus size={20} />
-          <span>Add Student</span>
-        </button>
-      </div>
-      {studentsError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: {studentsError}</div>
-      )}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search students..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:border-burgundy-500"
-            />
-          </div>
-        </div>
-        {studentsLoading ? (
-          <div className="p-8 text-center">Loading students...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Supervisor
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Program
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Evaluation Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
-                  <tr key={student.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{student.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {departments.find((dep) => dep.id === student.department)?.name || student.department}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {lecturers.find((lect) => lect.id === student.supervisor)?.name || student.supervisor}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{student.program}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {student.evaluation_type === "FIRST_EVALUATION" ? "First Evaluation" : "Re-Evaluation"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openModal("student", student)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(student.id, "student")}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
-  const LecturerManagement = () => (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-burgundy-700">Lecturer Management</h2>
-        <button
-          onClick={() => openModal("lecturer")}
-          className="bg-burgundy-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-burgundy-800"
-        >
-          <Plus size={20} />
-          <span>Add Lecturer</span>
-        </button>
-      </div>
-      {lecturersError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: {lecturersError}</div>
-      )}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search lecturers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:border-burgundy-500"
-            />
-          </div>
-        </div>
-        {lecturersLoading ? (
-          <div className="p-8 text-center">Loading lecturers...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    University
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLecturers.map((lecturer) => (
-                  <tr key={lecturer.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{lecturer.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {lecturerTitles.find((t) => t.value === lecturer.title)?.label || lecturer.title}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {typeof lecturer.department === "object"
-                        ? lecturer.department?.name || "N/A"
-                        : departments.find((d) => d.id === lecturer.department)?.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{lecturer.university || "UTM"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openModal("lecturer", lecturer)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(lecturer.id, "lecturer")}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-burgundy-700 flex items-center justify-center">
-                <div className="text-yellow-400 text-sm font-bold">UTM</div>
+    <>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center">
+                <div className="h-8 w-8 rounded-full bg-burgundy-700 flex items-center justify-center">
+                  <div className="text-yellow-400 text-sm font-bold">UTM</div>
+                </div>
+                <h1 className="ml-3 text-xl font-bold text-burgundy-700">Office Assistant Portal</h1>
               </div>
-              <h1 className="ml-3 text-xl font-bold text-burgundy-700">Office Assistant Portal</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-600">{user?.username || "Office Assistant"}</span>
-              <LogoutButton />
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-600">{user?.username || "Office Assistant"}</span>
+                <LogoutButton />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setCurrentTab("students")}
-              className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                currentTab === "students"
-                  ? "border-burgundy-500 text-burgundy-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <GraduationCap size={16} />
-              <span>Students</span>
-            </button>
-            <button
-              onClick={() => setCurrentTab("lecturers")}
-              className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                currentTab === "lecturers"
-                  ? "border-burgundy-500 text-burgundy-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <Users size={16} />
-              <span>Lecturers</span>
-            </button>
-          </nav>
+        {/* Navigation */}
+        <div className="bg-white border-b">
+          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setCurrentTab("students")}
+                className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  currentTab === "students"
+                    ? "border-burgundy-500 text-burgundy-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <GraduationCap size={16} />
+                <span>Students</span>
+              </button>
+              <button
+                onClick={() => setCurrentTab("lecturers")}
+                className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  currentTab === "lecturers"
+                    ? "border-burgundy-500 text-burgundy-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Users size={16} />
+                <span>Lecturers</span>
+              </button>
+            </nav>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentTab === "students" && <StudentManagement />}
-        {currentTab === "lecturers" && <LecturerManagement />}
+        {/* Main Content */}
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {currentTab === "students" && (
+            <StudentManagement
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filteredStudents={filteredStudents}
+              studentsLoading={studentsLoading}
+              studentsError={studentsError}
+              departments={departments}
+              lecturers={lecturers}
+              openModal={openModal}
+              handleDelete={handleDelete}
+            />
+          )}
+          {currentTab === "lecturers" && (
+            <LecturerManagement
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filteredLecturers={filteredLecturers}
+              lecturersLoading={lecturersLoading}
+              lecturersError={lecturersError}
+              departments={departments}
+              lecturerTitles={lecturerTitles}
+              openModal={openModal}
+              handleDelete={handleDelete}
+            />
+          )}
+        </div>
       </div>
 
       {/* Modal - Always render but control visibility */}
@@ -636,7 +688,7 @@ const OfficeAssistantSystem = () => {
         lecturerTitles={lecturerTitles}
         availableCoSupervisors={availableCoSupervisors}
       />
-    </div>
+    </>
   )
 }
 
