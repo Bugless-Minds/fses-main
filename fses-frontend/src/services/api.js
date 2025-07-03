@@ -71,9 +71,9 @@ export const authAPI = {
 export const studentAPI = {
   getAll: () => api.get('/fses/api/students/'),
   getById: (id) => api.get(`/fses/api/student/${id}/`),
-  create: (data) => api.post('/api/student/create', data),
-  update: (id, data) => api.put(`/api/student/update/${id}/`, data),
-  delete: (id) => api.delete(`/api/student/delete/${id}/`),
+  create: (data) => api.post('/fses/api/student/create', data),
+  update: (id, data) => api.put(`/fses/api/student/update/${id}/`, data),
+  delete: (id) => api.delete(`/fses/api/student/delete/${id}/`),
 };
 
 // Lecturer API - Fixed endpoints
